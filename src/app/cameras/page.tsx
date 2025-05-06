@@ -42,6 +42,7 @@ export default function CameraFeedsPage() {
   const [selectedArea, setSelectedArea] = useState("all");
   const [filteredCameras, setFilteredCameras] = useState<CameraLocation[]>(initialCameraLocations);
   const [selectedCamera, setSelectedCamera] = useState<CameraLocation | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     let cameras = initialCameraLocations;
@@ -68,7 +69,7 @@ export default function CameraFeedsPage() {
 
   const handleViewDetails = (cam: CameraLocation) => {
     setSelectedCamera(cam);
-    // Dialog will open automatically due to DialogTrigger
+    setIsDialogOpen(true);
   };
   
   return (
@@ -113,99 +114,104 @@ export default function CameraFeedsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCameras.map((cam) => (
-            <Card key={cam.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{cam.name}</CardTitle>
-                <CardDescription>{cam.area} - <span className={
-                  cam.status === "Online" ? "text-green-600" : 
-                  cam.status === "Offline" ? "text-destructive" : "text-yellow-500"
-                }>{cam.status}</span></CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DialogTrigger asChild>
-                  <button 
-                    className="relative aspect-video rounded-md overflow-hidden mb-3 w-full cursor-pointer"
-                    onClick={() => cam.status === "Online" && setSelectedCamera(cam)}
-                    disabled={cam.status !== "Online"}
-                    aria-label={`View details for ${cam.name}`}
-                  >
-                    <Image
-                      src={`https://picsum.photos/seed/${cam.imageUrlSeed}/640/360`}
-                      alt={`Live Camera Feed ${cam.id} - ${cam.name}`}
-                      layout="fill"
-                      objectFit="cover"
-                      data-ai-hint="traffic surveillance"
-                      className={cam.status !== "Online" ? "grayscale opacity-50" : ""}
-                    />
-                    {cam.status !== "Online" && (
-                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                        <p className="text-white text-xl font-semibold">{cam.status}</p>
-                      </div>
-                    )}
-                    {cam.status === "Online" && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent p-2 flex flex-col justify-end">
-                        <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">
-                          LIVE
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                </DialogTrigger>
-                {cam.status === "Online" && (
-                  <div className="flex justify-between items-center text-sm">
-                    <p>Vehicles Detected: <span className="font-semibold text-primary">{cam.vehicles}</span></p>
+            <Dialog key={cam.id} open={selectedCamera?.id === cam.id && isDialogOpen} onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                setIsDialogOpen(false);
+                setSelectedCamera(null);
+              }
+            }}>
+              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{cam.name}</CardTitle>
+                  <CardDescription>{cam.area} - <span className={
+                    cam.status === "Online" ? "text-green-600" : 
+                    cam.status === "Offline" ? "text-destructive" : "text-yellow-500"
+                  }>{cam.status}</span></CardDescription>
+                </CardHeader>
+                <CardContent>
                     <DialogTrigger asChild>
-                       <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
+                      <button 
+                        className="relative aspect-video rounded-md overflow-hidden mb-3 w-full cursor-pointer"
+                        onClick={() => cam.status === "Online" && handleViewDetails(cam)}
+                        disabled={cam.status !== "Online"}
+                        aria-label={`View details for ${cam.name}`}
+                      >
+                        <Image
+                          src={`https://picsum.photos/seed/${cam.imageUrlSeed}/640/360`}
+                          alt={`Live Camera Feed ${cam.id} - ${cam.name}`}
+                          layout="fill"
+                          objectFit="cover"
+                          data-ai-hint="traffic surveillance"
+                          className={cam.status !== "Online" ? "grayscale opacity-50" : ""}
+                        />
+                        {cam.status !== "Online" && (
+                          <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                            <p className="text-white text-xl font-semibold">{cam.status}</p>
+                          </div>
+                        )}
+                        {cam.status === "Online" && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent p-2 flex flex-col justify-end">
+                            <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">
+                              LIVE
+                            </div>
+                          </div>
+                        )}
+                      </button>
                     </DialogTrigger>
-                  </div>
+                  {cam.status === "Online" && (
+                    <div className="flex justify-between items-center text-sm">
+                      <p>Vehicles Detected: <span className="font-semibold text-primary">{cam.vehicles}</span></p>
+                      <DialogTrigger asChild>
+                         <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
+                      </DialogTrigger>
+                    </div>
+                  )}
+                  {cam.status !== "Online" && (
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                      <p>Last online: {cam.id % 2 === 0 ? '2 hours ago' : '1 day ago'}</p>
+                      <Button variant="ghost" size="sm" disabled>View Details</Button>
+                    </div>
+                  )}
+                </CardContent>
+                 {selectedCamera?.id === cam.id && (
+                  <DialogContent className="sm:max-w-[600px]">
+                      <DialogHeader>
+                      <DialogTitle className="text-2xl">{selectedCamera.name}</DialogTitle>
+                      <DialogDescription>
+                          Area: {selectedCamera.area} | Status: <span className={
+                          selectedCamera.status === "Online" ? "text-green-600" : 
+                          selectedCamera.status === "Offline" ? "text-destructive" : "text-yellow-500"
+                          }>{selectedCamera.status}</span>
+                          {selectedCamera.status === "Online" && ` | Vehicles: ${selectedCamera.vehicles}`}
+                      </DialogDescription>
+                      </DialogHeader>
+                      <div className="relative aspect-video rounded-md overflow-hidden my-4">
+                      <Image
+                          src={`https://picsum.photos/seed/${selectedCamera.imageUrlSeed}/1280/720`} // Larger image for dialog
+                          alt={`Enlarged view of ${selectedCamera.name}`}
+                          layout="fill"
+                          objectFit="contain"
+                          data-ai-hint="detailed traffic"
+                      />
+                       {selectedCamera.status === "Online" && (
+                          <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">LIVE</div>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                      This is a detailed view of the camera feed. In a real application, you might see more controls, historical data, or AI insights here.
+                      </p>
+                      <Button className="mt-4 w-full" onClick={() => {
+                        toast({title: "External Feed", description: `Opening external feed for ${selectedCamera.name}`});
+                        // window.open(`your-external-feed-url/${selectedCamera.id}`, "_blank");
+                      }}>
+                        <ExternalLink className="mr-2 h-4 w-4"/> Open Full Feed in New Tab (Mock)
+                      </Button>
+                  </DialogContent>
                 )}
-                {cam.status !== "Online" && (
-                  <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <p>Last online: {cam.id % 2 === 0 ? '2 hours ago' : '1 day ago'}</p>
-                    <Button variant="ghost" size="sm" disabled>View Details</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </Card>
+            </Dialog>
           ))}
         </div>
-      )}
-      {selectedCamera && (
-         <Dialog open={!!selectedCamera} onOpenChange={(isOpen) => !isOpen && setSelectedCamera(null)}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                <DialogTitle className="text-2xl">{selectedCamera.name}</DialogTitle>
-                <DialogDescription>
-                    Area: {selectedCamera.area} | Status: <span className={
-                    selectedCamera.status === "Online" ? "text-green-600" : 
-                    selectedCamera.status === "Offline" ? "text-destructive" : "text-yellow-500"
-                    }>{selectedCamera.status}</span>
-                    {selectedCamera.status === "Online" && ` | Vehicles: ${selectedCamera.vehicles}`}
-                </DialogDescription>
-                </DialogHeader>
-                <div className="relative aspect-video rounded-md overflow-hidden my-4">
-                <Image
-                    src={`https://picsum.photos/seed/${selectedCamera.imageUrlSeed}/1280/720`} // Larger image for dialog
-                    alt={`Enlarged view of ${selectedCamera.name}`}
-                    layout="fill"
-                    objectFit="contain"
-                    data-ai-hint="detailed traffic"
-                />
-                 {selectedCamera.status === "Online" && (
-                    <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">LIVE</div>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                This is a detailed view of the camera feed. In a real application, you might see more controls, historical data, or AI insights here.
-                </p>
-                <Button className="mt-4 w-full" onClick={() => {
-                  toast({title: "External Feed", description: `Opening external feed for ${selectedCamera.name}`});
-                  // window.open(`your-external-feed-url/${selectedCamera.id}`, "_blank");
-                }}>
-                  <ExternalLink className="mr-2 h-4 w-4"/> Open Full Feed in New Tab (Mock)
-                </Button>
-            </DialogContent>
-         </Dialog>
       )}
     </div>
   );

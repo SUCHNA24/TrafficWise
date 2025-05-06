@@ -1,5 +1,5 @@
 
-'use client'; // Add 'use client' for usePathname hook
+'use client'; 
 
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
@@ -15,29 +15,19 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  // SidebarMenuSub, // Not used
-  // SidebarMenuSubItem, // Not used
-  // SidebarMenuSubButton, // Not used
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
-import { Home, BarChart3, Video, Map, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut } from 'lucide-react'; // Removed Sun, Moon as ThemeToggle handles icons
+import { useToast } from "@/hooks/use-toast"; 
+import { Home, BarChart3, Video, MapPin, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, TrafficCone } from 'lucide-react'; 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { usePathname } from 'next/navigation'; // Import usePathname
+import { usePathname } from 'next/navigation'; 
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-
-// Metadata should be defined in a way that doesn't rely on hooks for server components.
-// Since this is now a client component due to usePathname, static metadata is fine.
-// export const metadata: Metadata = { // Metadata export removed as it's now a client component. Define in page.tsx or keep static here.
-//   title: 'TrafficWise - AI Traffic Management',
-//   description: 'Intelligent traffic management system powered by AI.',
-// };
 
 export default function RootLayout({
   children,
@@ -51,92 +41,76 @@ export default function RootLayout({
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
+      variant: "default", 
     });
-    // Add actual logout logic here if needed
   };
 
-  // It's better to define metadata in individual page.tsx files if RootLayout is client-side.
-  // For simplicity, we'll assume a general title here or remove it if it causes issues.
+  const pageTitles: Record<string, string> = {
+    '/': 'Dashboard Overview',
+    '/analytics': 'Analytics Portal',
+    '/cameras': 'Live Camera Feeds',
+    '/map': 'Interactive Congestion Map',
+    '/control': 'Signal Control Interface',
+    '/incidents': 'Incident Reports',
+    '/settings': 'User Settings',
+    '/admin': 'System Administration',
+  };
+  const currentPageTitle = pageTitles[pathname] || 'TrafficWise';
+
   if (typeof window !== 'undefined') {
-    document.title = 'TrafficWise - AI Traffic Management';
+    document.title = `TrafficWise - ${currentPageTitle}`;
   }
 
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-         {/* Title can be managed by Next.js Head component in page.tsx or here if static */}
+        <meta name="description" content="Intelligent traffic management system powered by AI." />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <SidebarProvider defaultOpen>
-          <Sidebar side="left" collapsible="icon" className="border-r">
-            <SidebarHeader className="p-4">
-              <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-primary group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7">
-                  <path d="M12.378 1.602a.75.75 0 00-.756 0L3.366 6.026A.75.75 0 003 6.728V19.5A.75.75 0 003.75 20.25h16.5A.75.75 0 0021 19.5V6.728a.75.75 0 00-.366-.702l-8.256-4.424zM12 7.5a.75.75 0 01.75.75v3.19l2.72 1.21a.75.75 0 01-.67 1.34l-2.72-1.21a.75.75 0 01-.75-.75V8.25A.75.75 0 0112 7.5zm-3.75.75a.75.75 0 000 1.5h.372l1.328-.59V8.25a.75.75 0 00-.75-.75H8.25zm1.5.932L8.422 9.75h1.328v1.018l1.328-.59V9.182zm3 1.193a.75.75 0 000 1.5h.372l1.328-.59V10.375a.75.75 0 00-.75-.75h-.95z" />
-                </svg>
-                <h1 className="text-2xl font-semibold text-primary group-data-[collapsible=icon]:hidden">TrafficWise</h1>
+          <Sidebar 
+            side="left" 
+            collapsible="icon" 
+            className="border-r border-sidebar-border shadow-md"
+            variant="sidebar" 
+          >
+            <SidebarHeader className="p-4 border-b border-sidebar-border">
+              <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+                <TrafficCone className="w-8 h-8 text-sidebar-primary group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7" />
+                <h1 className="text-xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">TrafficWise</h1>
               </div>
             </SidebarHeader>
-            <SidebarContent className="p-2">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <Link href="/" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Dashboard" isActive={pathname === '/'}>
-                      <Home />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href="/analytics" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Analytics" isActive={pathname === '/analytics'}>
-                      <BarChart3 />
-                      <span>Analytics</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href="/cameras" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Camera Feeds" isActive={pathname === '/cameras'}>
-                      <Video />
-                      <span>Camera Feeds</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href="/map" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Congestion Map" isActive={pathname === '/map'}>
-                      <Map />
-                      <span>Congestion Map</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href="/control" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Control Interface" isActive={pathname === '/control'}>
-                      <SlidersHorizontal />
-                      <span>Control Interface</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <Link href="/incidents" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Incident Reports" isActive={pathname === '/incidents'}>
-                      <AlertTriangle />
-                      <span>Incident Reports</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
+            <SidebarContent className="p-2 flex-grow">
+              <SidebarMenu className="space-y-1">
+                {[
+                  { href: "/", label: "Dashboard", icon: Home, tooltip: "Dashboard Overview" },
+                  { href: "/analytics", label: "Analytics", icon: BarChart3, tooltip: "Analytics Portal" },
+                  { href: "/cameras", label: "Cameras", icon: Video, tooltip: "Live Camera Feeds" },
+                  { href: "/map", label: "Map", icon: MapPin, tooltip: "Congestion Map" },
+                  { href: "/control", label: "Control", icon: SlidersHorizontal, tooltip: "Control Interface" },
+                  { href: "/incidents", label: "Incidents", icon: AlertTriangle, tooltip: "Incident Reports" },
+                ].map(item => (
+                  <SidebarMenuItem key={item.href}>
+                    <Link href={item.href} legacyBehavior passHref>
+                      <SidebarMenuButton tooltip={item.tooltip} isActive={pathname === item.href}>
+                        <item.icon className="h-5 w-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
 
-              <SidebarGroup className="mt-auto">
-                <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Settings</SidebarGroupLabel>
-                <SidebarMenu>
+              <SidebarGroup className="mt-auto pt-4 border-t border-sidebar-border">
+                <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-xs uppercase tracking-wider text-sidebar-foreground/70 px-2 mb-1">
+                  Management
+                </SidebarGroupLabel>
+                <SidebarMenu className="space-y-1">
                    <SidebarMenuItem>
                      <Link href="/settings" legacyBehavior passHref>
                         <SidebarMenuButton tooltip="General Settings" isActive={pathname === '/settings'}>
-                        <Settings />
+                        <Settings className="h-5 w-5"/>
                         <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                         </SidebarMenuButton>
                      </Link>
@@ -144,7 +118,7 @@ export default function RootLayout({
                   <SidebarMenuItem>
                      <Link href="/admin" legacyBehavior passHref>
                         <SidebarMenuButton tooltip="Admin Panel" isActive={pathname === '/admin'}>
-                        <Shield />
+                        <Shield className="h-5 w-5"/>
                         <span className="group-data-[collapsible=icon]:hidden">Admin</span>
                         </SidebarMenuButton>
                      </Link>
@@ -153,41 +127,35 @@ export default function RootLayout({
               </SidebarGroup>
 
             </SidebarContent>
-            <SidebarFooter className="p-4 border-t">
+            <SidebarFooter className="p-3 border-t border-sidebar-border">
               <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/40/40" data-ai-hint="user avatar" alt="User Avatar" />
-                    <AvatarFallback>JD</AvatarFallback>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9 border-2 border-sidebar-accent">
+                    <AvatarImage src="https://picsum.photos/seed/user/40/40" data-ai-hint="user avatar" alt="User Avatar" />
+                    <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">JD</AvatarFallback>
                   </Avatar>
                   <div className="group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium">John Doe</p>
-                    <p className="text-xs text-muted-foreground">Operator</p>
+                    <p className="text-sm font-medium text-sidebar-foreground">John Doe</p>
+                    <p className="text-xs text-sidebar-foreground/70">Operator</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden" onClick={handleLogout}>
-                  <LogOut />
+                <Button variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent group-data-[collapsible=icon]:hidden rounded-full h-8 w-8" onClick={handleLogout} title="Log Out">
+                  <LogOut className="h-5 w-5" />
                 </Button>
               </div>
             </SidebarFooter>
           </Sidebar>
-          <SidebarInset className="flex flex-col">
-            <header className="sticky top-0 z-10 flex items-center justify-between h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <SidebarTrigger className="md:hidden" />
-              <h2 className="text-lg font-semibold">
-                {/* Dynamically set header based on current page. Could be improved with a mapping or context. */}
-                {pathname === '/' && 'Dashboard'}
-                {pathname === '/analytics' && 'Analytics Portal'}
-                {pathname === '/cameras' && 'Live Camera Feeds'}
-                {pathname === '/map' && 'Interactive Congestion Map'}
-                {pathname === '/control' && 'Control Interface'}
-                {pathname === '/incidents' && 'Incident Reports'}
-                {pathname === '/settings' && 'Settings'}
-                {pathname === '/admin' && 'Admin Panel'}
-              </h2>
+          <SidebarInset className="flex flex-col bg-background">
+            <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="md:hidden text-muted-foreground hover:text-foreground" />
+                <h2 className="text-xl font-semibold text-foreground">
+                  {currentPageTitle}
+                </h2>
+              </div>
               <ThemeToggle />
             </header>
-            <main className="flex-1 overflow-auto p-4">
+            <main className="flex-1 overflow-y-auto p-6">
               {children}
             </main>
           </SidebarInset>

@@ -1,9 +1,9 @@
 
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from 'next/image';
-import { MapPin, Layers, Clock, ZoomIn } from "lucide-react";
+import { MapPin, Layers, Clock, ZoomIn, Route, AlertTriangle, VideoIcon, TrafficConeIcon } from "lucide-react"; // Added more icons
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -16,33 +16,34 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface MapLayer {
   id: string;
   name: string;
   enabled: boolean;
+  icon: React.ReactNode;
+  colorClass: string; // Tailwind color class for icon/badge
 }
 
 const initialMapLayers: MapLayer[] = [
-  { id: 'congestion', name: 'Congestion Heatmap', enabled: true },
-  { id: 'incidents', name: 'Incident Markers', enabled: true },
-  { id: 'cameras', name: 'Camera Locations', enabled: false },
-  { id: 'signals', name: 'Signal Status', enabled: false },
+  { id: 'congestion', name: 'Congestion Heatmap', enabled: true, icon: <Route className="h-4 w-4"/>, colorClass: "text-red-500" },
+  { id: 'incidents', name: 'Incident Markers', enabled: true, icon: <AlertTriangle className="h-4 w-4"/>, colorClass: "text-orange-500" },
+  { id: 'cameras', name: 'Camera Locations', enabled: false, icon: <VideoIcon className="h-4 w-4"/>, colorClass: "text-blue-500" },
+  { id: 'signals', name: 'Signal Status', enabled: false, icon: <TrafficConeIcon className="h-4 w-4"/>, colorClass: "text-green-500" },
 ];
 
 export default function CongestionMapPage() {
   const { toast } = useToast();
   const [mapLayers, setMapLayers] = useState<MapLayer[]>(initialMapLayers);
   const [selectedTimeframe, setSelectedTimeframe] = useState("now");
-  const [mapSeed, setMapSeed] = useState("interactivemap"); // For changing the placeholder image
+  const [mapSeed, setMapSeed] = useState("interactivemap_default"); 
+  const [mapZoomLevel, setMapZoomLevel] = useState(12); // Mock zoom level
 
   useEffect(() => {
-    // This effect could fetch new map data or update map configuration
-    // when layers or timeframe change. For now, just changes image seed.
     const activeLayers = mapLayers.filter(l => l.enabled).map(l => l.id).join('-');
-    setMapSeed(`map-${selectedTimeframe}-${activeLayers}`);
-    // console.log("Map updated. Timeframe:", selectedTimeframe, "Active Layers:", activeLayers);
-  }, [mapLayers, selectedTimeframe]);
+    setMapSeed(`map-${selectedTimeframe}-${activeLayers || 'none'}-zoom${mapZoomLevel}`);
+  }, [mapLayers, selectedTimeframe, mapZoomLevel]);
 
   const handleLayerToggle = (layerId: string, checked: boolean) => {
     setMapLayers(prevLayers => 
@@ -60,89 +61,103 @@ export default function CongestionMapPage() {
     setSelectedTimeframe(value);
     toast({
       title: "Timeframe Changed",
-      description: `Map timeframe set to: ${value === "now" ? "Current" : value === "1hr" ? "Next 1 Hour (Forecast)" : "Next 12 Hours (Forecast)"}.`,
+      description: `Map timeframe set to: ${
+        value === "now" ? "Current Conditions" : 
+        value === "1hr" ? "Next 1 Hour (Forecast)" : 
+        "Next 12 Hours (Forecast)"
+      }.`,
     });
   };
 
+  const handleZoom = (direction: 'in' | 'out') => {
+    setMapZoomLevel(prevZoom => {
+      const newZoom = direction === 'in' ? Math.min(18, prevZoom + 1) : Math.max(8, prevZoom - 1);
+      toast({ title: `Zoom ${direction}`, description: `Map zoomed to level ${newZoom}. (Mock action)` });
+      return newZoom;
+    });
+  };
+  
   const handleZoomToFit = () => {
-    toast({ title: "Zoom to Fit", description: "Map zoomed to fit all relevant data. (Mock action)" });
-    // In a real map, this would adjust the map's viewport
+    setMapZoomLevel(12); // Reset to a default overview zoom
+    toast({ title: "Zoom to Fit", description: "Map view reset to overview. (Mock action)" });
   };
 
-  const handleApplyFilters = () => {
-    // This button might not be strictly necessary if layers update instantly,
-    // but kept for potential future complex filtering logic.
-    const activeLayerNames = mapLayers.filter(l => l.enabled).map(l => l.name).join(', ');
-    toast({
-      title: "Map Filters Applied",
-      description: `Displaying: ${activeLayerNames || 'No layers selected'}. Timeframe: ${selectedTimeframe}.`,
-    });
-  };
 
   return (
     <div className="container mx-auto py-8 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-          <MapPin className="h-8 w-8" />
+      <header className="mb-10">
+        <h1 className="text-4xl font-bold text-primary flex items-center gap-3">
+          <MapPin className="h-10 w-10" />
           Interactive Congestion Map
         </h1>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Select value={selectedTimeframe} onValueChange={handleTimeframeChange}>
-            <SelectTrigger className="w-[220px]"> {/* Increased width for longer text */}
-              <SelectValue placeholder="Timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="now">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Current
-                </div>
-              </SelectItem>
-              <SelectItem value="1hr">
-                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Next 1 Hour (Forecast)
-                </div>
-              </SelectItem>
-              <SelectItem value="12hr">
-                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Next 12 Hours (Forecast)
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={handleZoomToFit}>
-            <ZoomIn className="h-4 w-4"/>
-            <span className="sr-only">Zoom to Fit</span>
-          </Button>
-        </div>
-      </div>
+        <p className="text-muted-foreground mt-1">Visualize real-time traffic flow, incidents, and forecasts.</p>
+      </header>
 
       <div className="flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-3 shadow-xl">
-          <CardContent className="p-0 h-full">
-            <div className="w-full h-full bg-secondary rounded-md flex items-center justify-center overflow-hidden min-h-[400px] lg:min-h-0">
+        <Card className="lg:col-span-3 shadow-xl flex flex-col">
+          <CardHeader className="border-b p-4 flex-row justify-between items-center">
+            <div className="flex items-center gap-3">
+               <Select value={selectedTimeframe} onValueChange={handleTimeframeChange}>
+                <SelectTrigger className="w-full sm:w-[240px] bg-background"> 
+                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Select Timeframe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="now">Current Conditions</SelectItem>
+                  <SelectItem value="1hr">Next 1 Hour (Forecast)</SelectItem>
+                  <SelectItem value="12hr">Next 12 Hours (Forecast)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => handleZoom('out')} title="Zoom Out">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="5" x2="19" y1="12" y2="12"/></svg>
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => handleZoom('in')} title="Zoom In">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleZoomToFit} title="Zoom to Fit">
+                <ZoomIn className="h-4 w-4"/>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 flex-grow relative bg-muted/30">
+            <div className="w-full h-full rounded-b-lg flex items-center justify-center overflow-hidden min-h-[400px] lg:min-h-0">
               <Image
                 src={`https://picsum.photos/seed/${mapSeed}/1200/800`}
                 alt="Interactive Map Placeholder"
-                width={1200}
-                height={800}
-                className="object-cover w-full h-full"
-                key={mapSeed} // Force re-render on seed change
+                fill
+                style={{objectFit: "cover"}}
+                className="object-cover w-full h-full transition-opacity duration-500"
+                key={mapSeed} 
                 data-ai-hint="city traffic aerial"
+                priority
               />
-              <p className="absolute text-lg text-background/80 bg-foreground/50 p-2 rounded">Mapbox GL Integration Placeholder</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent p-4 flex flex-col justify-end">
+                <div className="bg-background/80 backdrop-blur-sm p-2 rounded-md shadow-lg self-start">
+                    <p className="text-sm font-medium text-foreground">Mapbox GL Integration</p>
+                    <p className="text-xs text-muted-foreground">Zoom: {mapZoomLevel} | Layers: {mapLayers.filter(l => l.enabled).length}</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary"/>Map Layers</CardTitle>
-            <CardDescription>Toggle visibility of map features.</CardDescription>
+        <Card className="shadow-xl flex flex-col">
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2 text-lg"><Layers className="h-5 w-5 text-primary"/>Map Layers</CardTitle>
+            <CardDescription className="text-sm">Toggle visibility of map features.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-4 space-y-3 flex-grow">
             {mapLayers.map(layer => (
-              <div key={layer.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-                <Label htmlFor={layer.id} className="text-sm font-medium cursor-pointer">{layer.name}</Label>
+              <div 
+                key={layer.id} 
+                className="flex items-center justify-between p-3 bg-card hover:bg-muted/50 rounded-md border transition-colors"
+              >
+                <Label htmlFor={layer.id} className={`flex items-center gap-2 text-sm font-medium cursor-pointer ${layer.enabled ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <span className={layer.colorClass}>{layer.icon}</span>
+                  {layer.name}
+                </Label>
                 <Switch 
                   id={layer.id} 
                   checked={layer.enabled} 
@@ -151,8 +166,12 @@ export default function CongestionMapPage() {
                 />
               </div>
             ))}
-             <Button className="w-full mt-4" onClick={handleApplyFilters}>Apply Layer Changes</Button>
           </CardContent>
+          <CardFooter className="p-4 border-t">
+             <Button className="w-full" onClick={() => toast({title: "Applying Changes", description: "Map view updated with selected layers."})}>
+                Apply Layer Changes
+             </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>

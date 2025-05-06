@@ -1,22 +1,31 @@
+
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Video, Lightbulb, AlertTriangle, BarChart3 } from "lucide-react";
+import { MapPin, Video, Lightbulb, AlertTriangle, BarChart3, TrendingUp, Users } from "lucide-react";
 import Image from 'next/image';
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils"; // Added import for cn
 
 export default function DashboardPage() {
   const [vehicleCounts, setVehicleCounts] = useState<number[]>([]);
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
 
   useEffect(() => {
-    // Generate random numbers only on the client side after hydration
     setVehicleCounts([
       Math.floor(Math.random() * 20) + 5,
       Math.floor(Math.random() * 20) + 5,
     ]);
+
+    const updateTime = () => {
+      setCurrentDateTime(new Date().toLocaleString([], { dateStyle: 'full', timeStyle: 'medium' }));
+    };
+    updateTime();
+    const timerId = setInterval(updateTime, 1000);
+    return () => clearInterval(timerId);
   }, []);
 
 
@@ -26,151 +35,179 @@ export default function DashboardPage() {
     description: string;
     content: ReactNode;
     className?: string;
+    ctaLink?: string;
+    ctaText?: string;
   }
 
-  const CardItem: React.FC<CardItemProps> = ({ title, icon, description, content, className }) => (
-    <Card className={className}>
+  const CardItem: React.FC<CardItemProps> = ({ title, icon, description, content, className, ctaLink, ctaText }) => (
+    <Card className={cn("shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col", className)}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
           {icon}
           {title}
         </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>{content}</CardContent>
+      <CardContent className="flex-grow">{content}</CardContent>
+      {ctaLink && ctaText && (
+        <CardFooter className="mt-auto pt-4">
+          <Button variant="outline" className="w-full" asChild>
+            <Link href={ctaLink}>{ctaText}</Link>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 
   const renderVehicleCounts = (index: number) => {
     if (vehicleCounts.length > index) {
-      return `Vehicles Detected: ${vehicleCounts[index]}`;
+      return `Vehicles: ${vehicleCounts[index]}`;
     }
     return "Loading...";
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <CardItem
-        className="lg:col-span-2"
-        title="Real-Time Camera Feeds"
-        icon={<Video className="h-6 w-6 text-primary" />}
-        description="Live traffic views with AI-powered vehicle detection."
-        content={
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="relative aspect-video rounded-md overflow-hidden shadow-md">
-                <Image
-                  src={`https://picsum.photos/seed/cam${i}/640/360`}
-                  alt={`Live Camera Feed ${i}`}
-                  layout="fill"
-                  objectFit="cover"
-                  data-ai-hint="traffic camera"
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <p className="text-white text-lg font-semibold">Camera Feed {i}</p>
-                </div>
-                <div className="absolute bottom-2 left-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded">
-                  {renderVehicleCounts(i-1)}
-                </div>
-              </div>
-            ))}
-          </div>
-        }
-      />
+    <div className="space-y-6">
+      <Card className="bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl">Welcome to TrafficWise Dashboard</CardTitle>
+          <CardDescription className="text-primary-foreground/80">{currentDateTime || 'Loading date and time...'}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Overview of the city's intelligent traffic management system. Monitor live feeds, analyze trends, and manage incidents effectively.</p>
+        </CardContent>
+      </Card>
 
-      <CardItem
-        title="Interactive Congestion Map"
-        icon={<MapPin className="h-6 w-6 text-primary" />}
-        description="Color-coded heatmaps of current traffic conditions."
-        content={
-          <>
-            <div className="aspect-square bg-secondary rounded-md flex items-center justify-center overflow-hidden shadow-md">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <CardItem
+          className="lg:col-span-2"
+          title="Real-Time Camera Feeds"
+          icon={<Video className="h-6 w-6 text-primary" />}
+          description="Live traffic views with AI-powered vehicle detection."
+          content={
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="relative aspect-video rounded-lg overflow-hidden shadow-md group transition-transform hover:scale-105">
+                  <Image
+                    src={`https://picsum.photos/seed/cam${i}/640/360`}
+                    alt={`Live Camera Feed ${i}`}
+                    fill
+                    style={{objectFit: "cover"}}
+                    data-ai-hint="traffic camera"
+                    className="group-hover:opacity-90 transition-opacity"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 flex flex-col justify-between p-3">
+                    <p className="text-white text-base font-semibold drop-shadow-md">Camera Feed {i}</p>
+                    <div className="bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded self-start">
+                      {renderVehicleCounts(i-1)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          }
+          ctaLink="/cameras"
+          ctaText="View All Camera Feeds"
+        />
+
+        <CardItem
+          title="Interactive Congestion Map"
+          icon={<MapPin className="h-6 w-6 text-primary" />}
+          description="Color-coded heatmaps of current traffic conditions."
+          content={
+            <div className="relative aspect-square bg-secondary rounded-lg flex items-center justify-center overflow-hidden shadow-md group transition-transform hover:scale-105">
               <Image
                 src="https://picsum.photos/seed/map/400/400"
                 alt="Congestion Map Placeholder"
                 width={400}
                 height={400}
-                className="object-cover"
-                data-ai-hint="traffic map"
+                className="object-cover group-hover:opacity-90 transition-opacity"
+                data-ai-hint="city map aerial"
               />
-            </div>
-            <Button variant="outline" className="w-full mt-4 asChild">
-              <Link href="/map">View Full Map</Link>
-            </Button>
-          </>
-        }
-      />
-
-      <CardItem
-        title="Signal Status"
-        icon={<Lightbulb className="h-6 w-6 text-primary" />}
-        description="Real-time traffic light phases and countdowns."
-        content={
-          <div className="space-y-4">
-            {["Main St & 1st Ave", "Oak Rd & Pine Ln"].map((intersection) => (
-              <div key={intersection} className="p-3 bg-secondary rounded-md shadow">
-                <h4 className="font-semibold">{intersection}</h4>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm text-muted-foreground">Phase: Northbound Green</span>
-                  <span className="text-lg font-bold text-green-600">25s</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        }
-      />
-
-      <CardItem
-        title="Traffic Analytics"
-        icon={<BarChart3 className="h-6 w-6 text-primary" />}
-        description="Key performance indicators and trends."
-        content={
-          <>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-secondary rounded-md shadow">
-                <div>
-                  <p className="text-sm font-medium">Traffic Flow Improvement</p>
-                  <p className="text-xs text-muted-foreground">Compared to baseline</p>
-                </div>
-                <p className="text-xl font-bold text-green-600">+35%</p>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-secondary rounded-md shadow">
-                <div>
-                  <p className="text-sm font-medium">Vehicle Pass Rate</p>
-                  <p className="text-xs text-muted-foreground">Per signal cycle</p>
-                </div>
-                <p className="text-xl font-bold text-green-600">+50%</p>
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                 <MapPin className="h-12 w-12 text-white/80" />
               </div>
             </div>
-            <Button variant="outline" className="w-full mt-4 asChild">
-              <Link href="/analytics">View Detailed Analytics</Link>
-            </Button>
-          </>
-        }
-      />
+          }
+          ctaLink="/map"
+          ctaText="View Full Map"
+        />
 
-      <CardItem
-        title="Active Incidents"
-        icon={<AlertTriangle className="h-6 w-6 text-destructive" />}
-        description="Real-time alerts for accidents and road issues."
-        content={
-          <>
+        <CardItem
+          title="Signal Status Overview"
+          icon={<Lightbulb className="h-6 w-6 text-primary" />}
+          description="Real-time traffic light phases and priority status."
+          content={
             <div className="space-y-3">
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md shadow">
+              {[
+                { name: "Main St & 1st Ave", phase: "Northbound Green", time: 25, priority: "None" },
+                { name: "Oak Rd & Pine Ln", phase: "Eastbound Caution", time: 8, priority: "Emergency Vehicle" }
+              ].map((intersection) => (
+                <div key={intersection.name} className="p-3 bg-secondary/60 rounded-lg shadow-sm hover:bg-secondary transition-colors">
+                  <h4 className="font-semibold text-card-foreground">{intersection.name}</h4>
+                  <div className="flex items-center justify-between mt-1 text-sm">
+                    <span className="text-muted-foreground">{intersection.phase}</span>
+                    <span className={`font-bold ${intersection.phase.includes("Green") ? 'text-green-600' : 'text-yellow-600'}`}>{intersection.time}s</span>
+                  </div>
+                  {intersection.priority !== "None" && (
+                     <p className="text-xs text-accent font-medium mt-1">{intersection.priority} Priority Active</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          }
+          ctaLink="/control"
+          ctaText="Manage Signal Controls"
+        />
+
+        <CardItem
+          title="Traffic Analytics Highlights"
+          icon={<BarChart3 className="h-6 w-6 text-primary" />}
+          description="Key performance indicators and recent trends."
+          content={
+            <div className="space-y-3">
+              {[
+                { label: "Traffic Flow Improvement", value: "+35%", icon: <TrendingUp className="text-green-500" />, subtext: "vs Baseline" },
+                { label: "Avg. Vehicle Pass Rate", value: "+50%", icon: <Users className="text-blue-500" />, subtext: "Per Cycle" }
+              ].map(item => (
+                <div key={item.label} className="flex justify-between items-center p-3 bg-secondary/60 rounded-lg shadow-sm hover:bg-secondary transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-background rounded-md">{item.icon}</div>
+                    <div>
+                      <p className="text-sm font-medium text-card-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.subtext}</p>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-primary">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          }
+          ctaLink="/analytics"
+          ctaText="View Detailed Analytics"
+        />
+
+        <CardItem
+          title="Active Incidents Summary"
+          icon={<AlertTriangle className="h-6 w-6 text-destructive" />}
+          description="Real-time alerts for accidents and road issues."
+          content={
+            <div className="space-y-3">
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg shadow-sm hover:bg-destructive/20 transition-colors">
                 <h4 className="font-semibold text-destructive">Accident: Hwy 101 @ Exit 5</h4>
-                <p className="text-sm text-muted-foreground">Reported: 10 min ago. Minor delays.</p>
+                <p className="text-sm text-destructive/80">Reported: 10 min ago. Minor delays.</p>
               </div>
-              <div className="p-3 bg-yellow-400/20 border border-yellow-500/40 rounded-md shadow">
-                <h4 className="font-semibold text-yellow-700">Weather Alert: Downtown</h4>
-                <p className="text-sm text-muted-foreground">Heavy rain expected. Drive with caution.</p>
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg shadow-sm hover:bg-yellow-500/20 transition-colors">
+                <h4 className="font-semibold text-yellow-600">Weather Alert: Downtown</h4>
+                <p className="text-sm text-yellow-700/80">Heavy rain expected. Drive with caution.</p>
               </div>
             </div>
-            <Button variant="outline" className="w-full mt-4 asChild">
-              <Link href="/incidents">View All Incidents</Link>
-            </Button>
-          </>
-        }
-      />
+          }
+          ctaLink="/incidents"
+          ctaText="View All Incidents"
+        />
+      </div>
     </div>
   );
 }
+

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast"; 
-import { Home, BarChart3, Video, MapPin, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, TrafficCone } from 'lucide-react'; 
+import { HomeIcon as LucideHomeIcon, BarChart3, Video, MapPin, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, TrafficCone, LayoutDashboard } from 'lucide-react'; 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,7 +46,8 @@ export default function RootLayout({
   };
 
   const pageTitles: Record<string, string> = {
-    '/': 'Dashboard Overview',
+    '/': 'TrafficWise Home',
+    '/dashboard': 'Dashboard Overview',
     '/analytics': 'Analytics Portal',
     '/cameras': 'Live Camera Feeds',
     '/map': 'Interactive Congestion Map',
@@ -76,15 +77,16 @@ export default function RootLayout({
             variant="sidebar" 
           >
             <SidebarHeader className="p-4 border-b border-sidebar-border">
-              <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+              <Link href="/" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center focus:outline-none focus:ring-2 focus:ring-sidebar-ring rounded-md">
                 <TrafficCone className="w-8 h-8 text-sidebar-primary group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7" />
                 <h1 className="text-xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">TrafficWise</h1>
-              </div>
+              </Link>
             </SidebarHeader>
             <SidebarContent className="p-2 flex-grow">
               <SidebarMenu className="space-y-1">
                 {[
-                  { href: "/", label: "Dashboard", icon: Home, tooltip: "Dashboard Overview" },
+                  { href: "/", label: "Home", icon: LucideHomeIcon, tooltip: "Home Page" },
+                  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tooltip: "Dashboard Overview" },
                   { href: "/analytics", label: "Analytics", icon: BarChart3, tooltip: "Analytics Portal" },
                   { href: "/cameras", label: "Cameras", icon: Video, tooltip: "Live Camera Feeds" },
                   { href: "/map", label: "Map", icon: MapPin, tooltip: "Congestion Map" },
@@ -131,7 +133,7 @@ export default function RootLayout({
               <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9 border-2 border-sidebar-accent">
-                    <AvatarImage src="https://picsum.photos/seed/user/40/40" data-ai-hint="user avatar" alt="User Avatar" />
+                    <AvatarImage src="https://picsum.photos/seed/user_profile/40/40" data-ai-hint="user avatar" alt="User Avatar" />
                     <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">JD</AvatarFallback>
                   </Avatar>
                   <div className="group-data-[collapsible=icon]:hidden">
@@ -155,7 +157,7 @@ export default function RootLayout({
               </div>
               <ThemeToggle />
             </header>
-            <main className="flex-1 overflow-y-auto p-6">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6">
               {children}
             </main>
           </SidebarInset>
@@ -165,3 +167,4 @@ export default function RootLayout({
     </html>
   );
 }
+

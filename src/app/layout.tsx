@@ -1,4 +1,3 @@
-
 'use client'; 
 
 import type {Metadata} from 'next';
@@ -27,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname } from 'next/navigation'; 
 import React, { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -37,16 +37,6 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const { toast } = useToast();
-  const [pageTitle, setPageTitle] = useState('TrafficWise');
-
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-      variant: "default", 
-    });
-  };
 
   const pageTitlesMap: Record<string, string> = {
     '/': 'Home',
@@ -60,13 +50,23 @@ export default function RootLayout({
     '/admin': 'System Administration',
   };
   
+  // Determine pageTitle synchronously based on pathname
+  const pageTitle = pageTitlesMap[pathname] || 'TrafficWise';
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+      variant: "default", 
+    });
+  };
+  
   useEffect(() => {
-    const title = pageTitlesMap[pathname] || 'TrafficWise';
-    setPageTitle(title);
+    // Update document.title on client side after hydration
     if (typeof window !== 'undefined') {
-      document.title = `TrafficWise - ${title}`;
+      document.title = `TrafficWise - ${pageTitle}`;
     }
-  }, [pathname]);
+  }, [pageTitle]);
 
 
   return (
@@ -74,7 +74,7 @@ export default function RootLayout({
       <head>
         <meta name="description" content="Intelligent traffic management system powered by AI." />
       </head>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={cn(inter.variable, "font-sans antialiased bg-background text-foreground")}>
         <SidebarProvider defaultOpen>
           <Sidebar 
             side="left" 
@@ -154,7 +154,6 @@ export default function RootLayout({
             </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex flex-col bg-background">
-            {/* Ensure header z-index is consistent and lower than potential overlays like mobile sidebar */}
             <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="md:hidden text-muted-foreground hover:text-foreground" />
@@ -174,4 +173,3 @@ export default function RootLayout({
     </html>
   );
 }
-

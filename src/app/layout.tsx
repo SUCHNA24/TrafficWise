@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname } from 'next/navigation'; 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -37,6 +37,8 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const { toast } = useToast();
+  const [pageTitle, setPageTitle] = useState('TrafficWise');
+
 
   const handleLogout = () => {
     toast({
@@ -46,8 +48,8 @@ export default function RootLayout({
     });
   };
 
-  const pageTitles: Record<string, string> = {
-    '/': 'TrafficWise Home',
+  const pageTitlesMap: Record<string, string> = {
+    '/': 'Home',
     '/dashboard': 'Dashboard Overview',
     '/analytics': 'Analytics Portal',
     '/cameras': 'Live Camera Feeds',
@@ -57,13 +59,14 @@ export default function RootLayout({
     '/settings': 'User Settings',
     '/admin': 'System Administration',
   };
-  const currentPageTitle = pageTitles[pathname] || 'TrafficWise';
-
-  React.useEffect(() => {
+  
+  useEffect(() => {
+    const title = pageTitlesMap[pathname] || 'TrafficWise';
+    setPageTitle(title);
     if (typeof window !== 'undefined') {
-      document.title = `TrafficWise - ${currentPageTitle}`;
+      document.title = `TrafficWise - ${title}`;
     }
-  }, [currentPageTitle]);
+  }, [pathname]);
 
 
   return (
@@ -151,11 +154,12 @@ export default function RootLayout({
             </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex flex-col bg-background">
-            <header className="sticky top-0 z-[60] flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
+            {/* Ensure header z-index is consistent and lower than potential overlays like mobile sidebar */}
+            <header className="sticky top-0 z-40 flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="md:hidden text-muted-foreground hover:text-foreground" />
                 <h2 className="text-xl font-semibold text-foreground">
-                  {currentPageTitle}
+                  {pageTitle}
                 </h2>
               </div>
               <ThemeToggle />

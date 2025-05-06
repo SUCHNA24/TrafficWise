@@ -41,6 +41,16 @@ export default function SettingsPage() {
     autoLogoutTime: "30", // in minutes
   });
 
+  // State for formatted dates to avoid hydration mismatch
+  const [formattedLastMaintenance, setFormattedLastMaintenance] = useState('');
+
+  useEffect(() => {
+    // Simulate fetching a date that might be used in rendering
+    const maintenanceDate = new Date("2024-07-15"); 
+    setFormattedLastMaintenance(maintenanceDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+
+
   useEffect(() => {
     const storedTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : "light";
     const initialTheme = storedTheme === "dark" ? "dark" : "light";
@@ -154,6 +164,8 @@ export default function SettingsPage() {
                     <Input id="confirmPassword" type="password" placeholder="Confirm new password" value={profileData.confirmPassword} onChange={handleProfileChange} className="mt-1" />
                 </div>
             </div>
+            {/* Example usage of formatted date, if needed on this page */}
+            {/* <p className="text-sm text-muted-foreground">Last System Check: {formattedLastMaintenance || 'Loading...'}</p> */}
           </CardContent>
           <CardFooter className="border-t p-6">
             <Button onClick={handleSaveProfile} size="lg" className="ml-auto bg-primary hover:bg-primary/90">Save Profile Changes</Button>
@@ -228,3 +240,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

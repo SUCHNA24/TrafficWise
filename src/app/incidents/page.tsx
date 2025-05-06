@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -59,20 +59,23 @@ type Incident = {
   location: string; 
   severity: "Critical" | "High" | "Medium" | "Low"; 
   status: "Active" | "Investigating" | "Monitoring" | "Scheduled" | "Resolved" | "Closed"; 
-  reportedAt: string; 
+  reportedAt: string; // ISO String
   description: string; 
   assignedTo?: string;
   resolutionNotes?: string;
-  updatedAt: string;
+  updatedAt: string; // ISO String
+  // Client-side formatted dates
+  formattedReportedAt?: string;
+  formattedUpdatedAt?: string;
 };
 
 const initialIncidents: Incident[] = [
-  { id: "INC001", type: "Major Accident", location: "Main St & 1st Ave", severity: "Critical", status: "Active", reportedAt: "2024-07-28 10:15", description: "Multi-vehicle collision, emergency services on scene. Heavy traffic impact.", assignedTo: "Team Alpha", updatedAt: "2024-07-28 11:30" },
-  { id: "INC002", type: "Road Closure", location: "Oak Rd (btwn Pine & Elm)", severity: "Medium", status: "Scheduled", reportedAt: "2024-07-28 09:00", description: "Roadworks planned from 13:00 to 17:00.", updatedAt: "2024-07-28 09:05" },
-  { id: "INC003", type: "Weather Alert", location: "City Wide", severity: "Low", status: "Monitoring", reportedAt: "2024-07-28 11:00", description: "Heavy rain advisory, expect slippery roads. No major disruptions yet.", updatedAt: "2024-07-28 12:00" },
-  { id: "INC004", type: "Traffic Jam", location: "Highway 101 Northbound", severity: "High", status: "Active", reportedAt: "2024-07-28 11:30", description: "Congestion due to earlier incident INC001. Extended delays.", assignedTo: "System", updatedAt: "2024-07-28 12:15" },
-  { id: "INC005", type: "Minor Accident", location: "Industrial Park Gate 2", severity: "Medium", status: "Resolved", reportedAt: "2024-07-27 08:00", description: "Minor fender bender, cleared by operator.", resolutionNotes: "Vehicles moved, traffic flowing normally.", updatedAt: "2024-07-27 08:45" },
-  { id: "INC006", type: "Signal Malfunction", location: "Park Ave & Lake Rd", severity: "High", status: "Investigating", reportedAt: "2024-07-28 12:30", description: "Traffic signals reported as offline. Technician dispatched.", assignedTo: "Team Bravo", updatedAt: "2024-07-28 12:35"},
+  { id: "INC001", type: "Major Accident", location: "Main St & 1st Ave", severity: "Critical", status: "Active", reportedAt: "2024-07-28T10:15:00.000Z", description: "Multi-vehicle collision, emergency services on scene. Heavy traffic impact.", assignedTo: "Team Alpha", updatedAt: "2024-07-28T11:30:00.000Z" },
+  { id: "INC002", type: "Road Closure", location: "Oak Rd (btwn Pine & Elm)", severity: "Medium", status: "Scheduled", reportedAt: "2024-07-28T09:00:00.000Z", description: "Roadworks planned from 13:00 to 17:00.", updatedAt: "2024-07-28T09:05:00.000Z" },
+  { id: "INC003", type: "Weather Alert", location: "City Wide", severity: "Low", status: "Monitoring", reportedAt: "2024-07-28T11:00:00.000Z", description: "Heavy rain advisory, expect slippery roads. No major disruptions yet.", updatedAt: "2024-07-28T12:00:00.000Z" },
+  { id: "INC004", type: "Traffic Jam", location: "Highway 101 Northbound", severity: "High", status: "Active", reportedAt: "2024-07-28T11:30:00.000Z", description: "Congestion due to earlier incident INC001. Extended delays.", assignedTo: "System", updatedAt: "2024-07-28T12:15:00.000Z" },
+  { id: "INC005", type: "Minor Accident", location: "Industrial Park Gate 2", severity: "Medium", status: "Resolved", reportedAt: "2024-07-27T08:00:00.000Z", description: "Minor fender bender, cleared by operator.", resolutionNotes: "Vehicles moved, traffic flowing normally.", updatedAt: "2024-07-27T08:45:00.000Z" },
+  { id: "INC006", type: "Signal Malfunction", location: "Park Ave & Lake Rd", severity: "High", status: "Investigating", reportedAt: "2024-07-28T12:30:00.000Z", description: "Traffic signals reported as offline. Technician dispatched.", assignedTo: "Team Bravo", updatedAt: "2024-07-28T12:35:00.000Z"},
 ];
 
 const getSeverityBadgeDetails = (severity: Incident["severity"]): { variant: "destructive" | "secondary" | "default" | "outline"; className: string } => {
@@ -117,6 +120,16 @@ export default function IncidentReportsPage() {
   const [incidentToEdit, setIncidentToEdit] = useState<Incident | null>(null);
   const [formValues, setFormValues] = useState<Partial<Incident>>({ type: "Accident", severity: "Medium" });
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setIncidents(prevIncidents => 
+      prevIncidents.map(inc => ({
+        ...inc,
+        formattedReportedAt: new Date(inc.reportedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        formattedUpdatedAt: new Date(inc.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      }))
+    );
+  }, []);
 
 
   const filteredAndSortedIncidents = useMemo(() => {
@@ -183,14 +196,16 @@ export default function IncidentReportsPage() {
   };
 
   const handleResolveIncident = (incidentId: string, notes: string) => {
-    setIncidents(prev => prev.map(inc => inc.id === incidentId ? {...inc, status: "Resolved", resolutionNotes: notes, updatedAt: new Date().toISOString().slice(0,16).replace('T', ' ') } : inc));
-    setSelectedIncident(prev => prev && prev.id === incidentId ? {...prev, status: "Resolved", resolutionNotes: notes, updatedAt: new Date().toISOString().slice(0,16).replace('T', ' ')} : prev); // Update selectedIncident if it's the one being resolved
+    const now = new Date().toISOString();
+    setIncidents(prev => prev.map(inc => inc.id === incidentId ? {...inc, status: "Resolved", resolutionNotes: notes, updatedAt: now, formattedUpdatedAt: new Date(now).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } : inc));
+    setSelectedIncident(prev => prev && prev.id === incidentId ? {...prev, status: "Resolved", resolutionNotes: notes, updatedAt: now, formattedUpdatedAt: new Date(now).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} : prev);
     toast({ title: "Incident Resolved", description: `Incident ${incidentId} marked as resolved.`, className: "bg-green-500 text-white dark:bg-green-600" });
   };
 
   const handleEscalateIncident = (incident: Incident) => {
-     setIncidents(prev => prev.map(inc => inc.id === incident.id ? {...inc, severity: "Critical", status: "Active", assignedTo: "Escalation Team", updatedAt: new Date().toISOString().slice(0,16).replace('T', ' ') } : inc));
-     setSelectedIncident(prev => prev && prev.id === incident.id ? {...prev, severity: "Critical", status: "Active", assignedTo: "Escalation Team", updatedAt: new Date().toISOString().slice(0,16).replace('T', ' ') } : prev);
+    const now = new Date().toISOString();
+     setIncidents(prev => prev.map(inc => inc.id === incident.id ? {...inc, severity: "Critical", status: "Active", assignedTo: "Escalation Team", updatedAt: now, formattedUpdatedAt: new Date(now).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } : inc));
+     setSelectedIncident(prev => prev && prev.id === incident.id ? {...prev, severity: "Critical", status: "Active", assignedTo: "Escalation Team", updatedAt: now, formattedUpdatedAt: new Date(now).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) } : prev);
      toast({ title: "Incident Escalated", description: `Incident ${incident.id} escalated to Critical.`, variant: "destructive"});
   };
 
@@ -218,14 +233,17 @@ export default function IncidentReportsPage() {
       return;
     }
 
-    const now = new Date().toISOString().slice(0,16).replace('T', ' ');
+    const now = new Date().toISOString();
+    const formattedNow = new Date(now).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
 
     if (incidentToEdit) { // Editing existing incident
       const updatedIncident: Incident = {
         ...incidentToEdit,
         ...formValues,
         updatedAt: now,
-      } as Incident; // Ensure all required fields are present
+        formattedUpdatedAt: formattedNow,
+      } as Incident; 
       setIncidents(prev => prev.map(inc => inc.id === updatedIncident.id ? updatedIncident : inc));
       toast({ title: "Incident Updated", description: `Incident ${updatedIncident.id} has been updated.` });
       setIsEditReportModalOpen(false);
@@ -233,7 +251,7 @@ export default function IncidentReportsPage() {
       if(selectedIncident?.id === updatedIncident.id) setSelectedIncident(updatedIncident);
     } else { // Adding new incident
       const newReport: Incident = {
-        id: `INC${String(incidents.length + 101).padStart(3, '0')}`, // Ensure unique IDs
+        id: `INC${String(incidents.length + 101).padStart(3, '0')}`, 
         type: formValues.type!,
         location: formValues.location!,
         severity: formValues.severity as Incident["severity"],
@@ -242,12 +260,14 @@ export default function IncidentReportsPage() {
         description: formValues.description!,
         assignedTo: formValues.assignedTo,
         updatedAt: now,
+        formattedReportedAt: formattedNow,
+        formattedUpdatedAt: formattedNow,
       };
       setIncidents(prev => [newReport, ...prev]);
       toast({ title: "New Incident Reported", description: `Incident ${newReport.id} has been created.` });
       setIsNewReportModalOpen(false);
     }
-    setFormValues({ type: "Accident", severity: "Medium" }); // Reset form
+    setFormValues({ type: "Accident", severity: "Medium" }); 
   };
   
   const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -372,8 +392,8 @@ export default function IncidentReportsPage() {
                           {statusDetails.icon} {incident.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{new Date(incident.reportedAt).toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{new Date(incident.updatedAt).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{incident.formattedReportedAt || 'Loading...'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{incident.formattedUpdatedAt || 'Loading...'}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -461,8 +481,8 @@ export default function IncidentReportsPage() {
             <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
               <p><strong>Type:</strong> {selectedIncident.type}</p>
               <p><strong>Location:</strong> {selectedIncident.location}</p>
-              <p><strong>Reported At:</strong> {new Date(selectedIncident.reportedAt).toLocaleString()}</p>
-              <p><strong>Last Updated:</strong> {new Date(selectedIncident.updatedAt).toLocaleString()}</p>
+              <p><strong>Reported At:</strong> {selectedIncident.formattedReportedAt || new Date(selectedIncident.reportedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              <p><strong>Last Updated:</strong> {selectedIncident.formattedUpdatedAt || new Date(selectedIncident.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
               <p><strong>Description:</strong> {selectedIncident.description}</p>
               {selectedIncident.assignedTo && <p><strong>Assigned To:</strong> {selectedIncident.assignedTo}</p>}
               {selectedIncident.resolutionNotes && <p><strong>Resolution Notes:</strong> {selectedIncident.resolutionNotes}</p>}
@@ -593,3 +613,4 @@ export default function IncidentReportsPage() {
     </div>
   );
 }
+

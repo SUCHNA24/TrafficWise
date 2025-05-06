@@ -207,7 +207,7 @@ export default function CameraFeedsPage() {
                   {cam.status !== "Online" && (
                     <div className="text-sm text-muted-foreground space-y-0.5">
                       <p>Last online: {cam.id % 2 === 0 ? 'Approx. 2 hours ago' : 'Yesterday'}</p>
-                      <p>Next Maint.: {new Date(cam.lastMaintenance).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                      <p>Next Maint.: {new Date(cam.lastMaintenance).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                     </div>
                   )}
                 </CardContent>
@@ -265,7 +265,7 @@ export default function CameraFeedsPage() {
                         <p className="text-base text-foreground leading-relaxed">
                           This is a detailed, high-resolution view of the camera feed from <span className="font-semibold text-primary">{selectedCamera.name}</span>. In a fully operational system, this panel would include interactive controls, AI-driven object detection overlays (highlighting vehicles, pedestrians, etc.), and potentially a timeline for reviewing recent events or footage.
                         </p>
-                        <p className="text-sm text-muted-foreground">Last Maintenance Check: {new Date(selectedCamera.lastMaintenance).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</p>
+                        <p className="text-sm text-muted-foreground">Last Maintenance Check: {new Date(selectedCamera.lastMaintenance).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</p>
                       </div>
                       <DialogFooter className="p-6 pt-4 border-t bg-muted/30 sm:justify-between rounded-b-xl">
                           <DialogClose asChild>

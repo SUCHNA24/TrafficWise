@@ -1,3 +1,6 @@
+
+'use client'; // Add 'use client' for usePathname hook
+
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -12,33 +15,58 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
+  // SidebarMenuSub, // Not used
+  // SidebarMenuSubItem, // Not used
+  // SidebarMenuSubButton, // Not used
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Toaster } from "@/components/ui/toaster";
-import { Home, BarChart3, Video, Map, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, Sun, Moon } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { Home, BarChart3, Video, Map, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut } from 'lucide-react'; // Removed Sun, Moon as ThemeToggle handles icons
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/theme-toggle'; // Assuming you'll create this
+import { ThemeToggle } from '@/components/theme-toggle';
+import { usePathname } from 'next/navigation'; // Import usePathname
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
-export const metadata: Metadata = {
-  title: 'TrafficWise - AI Traffic Management',
-  description: 'Intelligent traffic management system powered by AI.',
-};
+// Metadata should be defined in a way that doesn't rely on hooks for server components.
+// Since this is now a client component due to usePathname, static metadata is fine.
+// export const metadata: Metadata = { // Metadata export removed as it's now a client component. Define in page.tsx or keep static here.
+//   title: 'TrafficWise - AI Traffic Management',
+//   description: 'Intelligent traffic management system powered by AI.',
+// };
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    // Add actual logout logic here if needed
+  };
+
+  // It's better to define metadata in individual page.tsx files if RootLayout is client-side.
+  // For simplicity, we'll assume a general title here or remove it if it causes issues.
+  if (typeof window !== 'undefined') {
+    document.title = 'TrafficWise - AI Traffic Management';
+  }
+
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+         {/* Title can be managed by Next.js Head component in page.tsx or here if static */}
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SidebarProvider defaultOpen>
           <Sidebar side="left" collapsible="icon" className="border-r">
@@ -54,7 +82,7 @@ export default function RootLayout({
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Dashboard" isActive>
+                    <SidebarMenuButton tooltip="Dashboard" isActive={pathname === '/'}>
                       <Home />
                       <span>Dashboard</span>
                     </SidebarMenuButton>
@@ -62,7 +90,7 @@ export default function RootLayout({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/analytics" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Analytics">
+                    <SidebarMenuButton tooltip="Analytics" isActive={pathname === '/analytics'}>
                       <BarChart3 />
                       <span>Analytics</span>
                     </SidebarMenuButton>
@@ -70,7 +98,7 @@ export default function RootLayout({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/cameras" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Camera Feeds">
+                    <SidebarMenuButton tooltip="Camera Feeds" isActive={pathname === '/cameras'}>
                       <Video />
                       <span>Camera Feeds</span>
                     </SidebarMenuButton>
@@ -78,7 +106,7 @@ export default function RootLayout({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/map" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Congestion Map">
+                    <SidebarMenuButton tooltip="Congestion Map" isActive={pathname === '/map'}>
                       <Map />
                       <span>Congestion Map</span>
                     </SidebarMenuButton>
@@ -86,7 +114,7 @@ export default function RootLayout({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/control" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Control Interface">
+                    <SidebarMenuButton tooltip="Control Interface" isActive={pathname === '/control'}>
                       <SlidersHorizontal />
                       <span>Control Interface</span>
                     </SidebarMenuButton>
@@ -94,7 +122,7 @@ export default function RootLayout({
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/incidents" legacyBehavior passHref>
-                    <SidebarMenuButton tooltip="Incident Reports">
+                    <SidebarMenuButton tooltip="Incident Reports" isActive={pathname === '/incidents'}>
                       <AlertTriangle />
                       <span>Incident Reports</span>
                     </SidebarMenuButton>
@@ -107,7 +135,7 @@ export default function RootLayout({
                 <SidebarMenu>
                    <SidebarMenuItem>
                      <Link href="/settings" legacyBehavior passHref>
-                        <SidebarMenuButton tooltip="General Settings">
+                        <SidebarMenuButton tooltip="General Settings" isActive={pathname === '/settings'}>
                         <Settings />
                         <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                         </SidebarMenuButton>
@@ -115,7 +143,7 @@ export default function RootLayout({
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                      <Link href="/admin" legacyBehavior passHref>
-                        <SidebarMenuButton tooltip="Admin Panel">
+                        <SidebarMenuButton tooltip="Admin Panel" isActive={pathname === '/admin'}>
                         <Shield />
                         <span className="group-data-[collapsible=icon]:hidden">Admin</span>
                         </SidebarMenuButton>
@@ -137,7 +165,7 @@ export default function RootLayout({
                     <p className="text-xs text-muted-foreground">Operator</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
+                <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden" onClick={handleLogout}>
                   <LogOut />
                 </Button>
               </div>
@@ -146,7 +174,17 @@ export default function RootLayout({
           <SidebarInset className="flex flex-col">
             <header className="sticky top-0 z-10 flex items-center justify-between h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <SidebarTrigger className="md:hidden" />
-              <h2 className="text-lg font-semibold">Dashboard</h2>
+              <h2 className="text-lg font-semibold">
+                {/* Dynamically set header based on current page. Could be improved with a mapping or context. */}
+                {pathname === '/' && 'Dashboard'}
+                {pathname === '/analytics' && 'Analytics Portal'}
+                {pathname === '/cameras' && 'Live Camera Feeds'}
+                {pathname === '/map' && 'Interactive Congestion Map'}
+                {pathname === '/control' && 'Control Interface'}
+                {pathname === '/incidents' && 'Incident Reports'}
+                {pathname === '/settings' && 'Settings'}
+                {pathname === '/admin' && 'Admin Panel'}
+              </h2>
               <ThemeToggle />
             </header>
             <main className="flex-1 overflow-auto p-4">

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast"; 
-import { HomeIcon as LucideHomeIcon, BarChart3, Video, MapPin, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, TrafficCone, LayoutDashboard } from 'lucide-react'; 
+import { HomeIcon as LucideHomeIcon, BarChart3, Video, MapPin, SlidersHorizontal, AlertTriangle, Settings, Shield, LogOut, TrafficCone, LayoutDashboard, AreaChart } from 'lucide-react'; 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -52,6 +52,18 @@ export default function RootLayout({
     });
   };
 
+  const pageIconsMap: Record<string, React.ElementType> = {
+    '/': LucideHomeIcon,
+    '/dashboard': LayoutDashboard,
+    '/analytics': AreaChart, // Changed from BarChart3 to AreaChart
+    '/cameras': Video,
+    '/map': MapPin,
+    '/control': SlidersHorizontal,
+    '/incidents': AlertTriangle,
+    '/settings': Settings,
+    '/admin': Shield,
+  };
+
   const pageTitlesMap: Record<string, string> = {
     '/': 'Home',
     '/dashboard': 'Dashboard Overview',
@@ -65,27 +77,29 @@ export default function RootLayout({
   };
   
   useEffect(() => {
-    setIsMounted(true);
-    const title = pageTitlesMap[pathname] || DEFAULT_TITLE;
-    setPageTitle(title);
-    if (typeof window !== 'undefined') {
-      document.title = `TrafficWise - ${title}`;
+    setIsMounted(true); // Ensure this runs only on client
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) { // Only update title if component is mounted (client-side)
+      const title = pageTitlesMap[pathname] || DEFAULT_TITLE;
+      setPageTitle(title);
+      if (typeof window !== 'undefined') {
+        document.title = `TrafficWise - ${title}`;
+      }
     }
-  }, [pathname]);
+  }, [pathname, isMounted]);
 
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="description" content="Intelligent traffic management system powered by AI." />
-        <title>TrafficWise</title> {/* Static title for SSR */}
-      </head>
+      <head><meta name="description" content="Intelligent traffic management system powered by AI." /><title>TrafficWise</title></head>
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <SidebarProvider defaultOpen>
           <Sidebar 
             side="left" 
             collapsible="icon" 
-            className="border-r border-sidebar-border shadow-md z-50" // Consistent high z-index
+            className="border-r border-sidebar-border shadow-md z-50"
             variant="sidebar" 
           >
             <SidebarHeader className="p-4 border-b border-sidebar-border">
@@ -99,7 +113,7 @@ export default function RootLayout({
                 {[
                   { href: "/", label: "Home", icon: LucideHomeIcon, tooltip: "Home Page" },
                   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tooltip: "Dashboard Overview" },
-                  { href: "/analytics", label: "Analytics", icon: BarChart3, tooltip: "Analytics Portal" },
+                  { href: "/analytics", label: "Analytics", icon: AreaChart, tooltip: "Analytics Portal" },
                   { href: "/cameras", label: "Cameras", icon: Video, tooltip: "Live Camera Feeds" },
                   { href: "/map", label: "Map", icon: MapPin, tooltip: "Congestion Map" },
                   { href: "/control", label: "Control", icon: SlidersHorizontal, tooltip: "Control Interface" },
@@ -179,3 +193,4 @@ export default function RootLayout({
     </html>
   );
 }
+

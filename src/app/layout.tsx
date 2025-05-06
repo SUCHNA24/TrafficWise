@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname } from 'next/navigation'; 
+import React from 'react';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -58,9 +59,11 @@ export default function RootLayout({
   };
   const currentPageTitle = pageTitles[pathname] || 'TrafficWise';
 
-  if (typeof window !== 'undefined') {
-    document.title = `TrafficWise - ${currentPageTitle}`;
-  }
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.title = `TrafficWise - ${currentPageTitle}`;
+    }
+  }, [currentPageTitle]);
 
 
   return (
@@ -148,7 +151,7 @@ export default function RootLayout({
             </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex flex-col bg-background">
-            <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
+            <header className="sticky top-0 z-[60] flex items-center justify-between h-16 px-6 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="md:hidden text-muted-foreground hover:text-foreground" />
                 <h2 className="text-xl font-semibold text-foreground">

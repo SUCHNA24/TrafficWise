@@ -41,7 +41,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <SidebarProvider defaultOpen>
-          <Sidebar defaultOpen side="left" collapsible="icon" className="border-r">
+          <Sidebar side="left" collapsible="icon" className="border-r">
             <SidebarHeader className="p-4">
               <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-primary group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7">

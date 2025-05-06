@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +20,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger, // No longer needed here
 } from "@/components/ui/dialog";
 
 
@@ -68,8 +67,16 @@ export default function CameraFeedsPage() {
   };
 
   const handleViewDetails = (cam: CameraLocation) => {
-    setSelectedCamera(cam);
-    setIsDialogOpen(true);
+    if (cam.status === "Online") {
+      setSelectedCamera(cam);
+      setIsDialogOpen(true);
+    } else {
+      toast({
+        title: "Camera Offline",
+        description: `Camera ${cam.name} is currently ${cam.status.toLowerCase()}. Details are not available.`,
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -117,7 +124,7 @@ export default function CameraFeedsPage() {
             <Dialog key={cam.id} open={selectedCamera?.id === cam.id && isDialogOpen} onOpenChange={(isOpen) => {
               if (!isOpen) {
                 setIsDialogOpen(false);
-                setSelectedCamera(null);
+                // setSelectedCamera(null); // Let Dialog close naturally, then if needed on next open it will set new cam
               }
             }}>
               <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -129,52 +136,52 @@ export default function CameraFeedsPage() {
                   }>{cam.status}</span></CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DialogTrigger asChild>
-                      <button 
-                        className="relative aspect-video rounded-md overflow-hidden mb-3 w-full cursor-pointer"
-                        onClick={() => cam.status === "Online" && handleViewDetails(cam)}
-                        disabled={cam.status !== "Online"}
-                        aria-label={`View details for ${cam.name}`}
-                      >
-                        <Image
-                          src={`https://picsum.photos/seed/${cam.imageUrlSeed}/640/360`}
-                          alt={`Live Camera Feed ${cam.id} - ${cam.name}`}
-                          layout="fill"
-                          objectFit="cover"
-                          data-ai-hint="traffic surveillance"
-                          className={cam.status !== "Online" ? "grayscale opacity-50" : ""}
-                        />
-                        {cam.status !== "Online" && (
-                          <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                            <p className="text-white text-xl font-semibold">{cam.status}</p>
+                    <button 
+                      className="relative aspect-video rounded-md overflow-hidden mb-3 w-full cursor-pointer group"
+                      onClick={() => handleViewDetails(cam)}
+                      disabled={cam.status !== "Online"}
+                      aria-label={`View details for ${cam.name}`}
+                    >
+                      <Image
+                        src={`https://picsum.photos/seed/${cam.imageUrlSeed}/640/360`}
+                        alt={`Live Camera Feed ${cam.id} - ${cam.name}`}
+                        fill // Changed from layout="fill" to fill for Next 13+
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Added sizes prop
+                        style={{objectFit:"cover"}} // Changed from objectFit="cover" to style
+                        data-ai-hint="traffic surveillance"
+                        className={cam.status !== "Online" ? "grayscale opacity-50" : "group-hover:scale-105 transition-transform duration-300"}
+                      />
+                      {cam.status !== "Online" && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                          <p className="text-white text-xl font-semibold">{cam.status}</p>
+                        </div>
+                      )}
+                      {cam.status === "Online" && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent p-2 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">
+                            LIVE
                           </div>
-                        )}
-                        {cam.status === "Online" && (
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent p-2 flex flex-col justify-end">
-                            <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-full">
-                              LIVE
-                            </div>
-                          </div>
-                        )}
-                      </button>
-                    </DialogTrigger>
+                           <p className="text-white text-sm font-medium">Click to view details</p>
+                        </div>
+                      )}
+                    </button>
                   {cam.status === "Online" && (
                     <div className="flex justify-between items-center text-sm">
                       <p>Vehicles Detected: <span className="font-semibold text-primary">{cam.vehicles}</span></p>
-                      <DialogTrigger asChild>
-                         <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
-                      </DialogTrigger>
+                       <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
                     </div>
                   )}
                   {cam.status !== "Online" && (
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                       <p>Last online: {cam.id % 2 === 0 ? '2 hours ago' : '1 day ago'}</p>
-                      <Button variant="ghost" size="sm" disabled>View Details</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
                     </div>
                   )}
                 </CardContent>
-                 {selectedCamera?.id === cam.id && (
+                 {/* DialogContent is now directly tied to Dialog's open state, no separate trigger needed for it here */}
                   <DialogContent className="sm:max-w-[600px]">
+                    {selectedCamera && ( // Ensure selectedCamera is not null before rendering
+                    <>
                       <DialogHeader>
                       <DialogTitle className="text-2xl">{selectedCamera.name}</DialogTitle>
                       <DialogDescription>
@@ -189,8 +196,9 @@ export default function CameraFeedsPage() {
                       <Image
                           src={`https://picsum.photos/seed/${selectedCamera.imageUrlSeed}/1280/720`} // Larger image for dialog
                           alt={`Enlarged view of ${selectedCamera.name}`}
-                          layout="fill"
-                          objectFit="contain"
+                          fill
+                          sizes="(max-width: 640px) 100vw, 600px"
+                          style={{objectFit:"contain"}}
                           data-ai-hint="detailed traffic"
                       />
                        {selectedCamera.status === "Online" && (
@@ -206,8 +214,9 @@ export default function CameraFeedsPage() {
                       }}>
                         <ExternalLink className="mr-2 h-4 w-4"/> Open Full Feed in New Tab (Mock)
                       </Button>
+                      </>
+                      )}
                   </DialogContent>
-                )}
               </Card>
             </Dialog>
           ))}

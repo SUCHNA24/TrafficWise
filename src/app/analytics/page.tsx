@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, LineChart as RechartsLineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, Bar, PieChart, Pie, Cell } from 'recharts';
 import { congestionForecast, type CongestionForecastOutput } from '@/ai/flows/congestion-forecast';
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Clock, PieChartIcon, Activity, BarChart3, Download, ServerCrash, AreaChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Clock, PieChartIcon, Activity, BarChartIcon, Download, ServerCrash, AreaChart } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Button } from '@/components/ui/button';
 import {
@@ -52,9 +52,15 @@ export default function AnalyticsPage() {
         }));
         setForecastData(formattedForecast);
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching congestion forecast:", err);
-        setForecastError("Failed to load congestion forecast. Please try again later.");
+        if (err.message && err.message.includes("GOOGLE_API_KEY")) {
+          setForecastError("Failed to load AI-powered congestion forecast. The Google AI API key is missing or invalid. Please check your environment configuration. Displaying mock data only.");
+        } else if (err.message && err.message.includes("No model provider")) {
+          setForecastError("AI model provider not configured for congestion forecast. Displaying mock data only.");
+        } else {
+          setForecastError("Failed to load congestion forecast. Please try again later.");
+        }
       } finally {
         setLoadingForecast(false);
       }
@@ -72,11 +78,16 @@ export default function AnalyticsPage() {
   }, []);
 
   const combinedChartData = useMemo(() => {
-    const relevantHistoricalData = mockHistoricalTrafficData.slice(0, 12);
-    return relevantHistoricalData.map((actual, index) => ({
-      ...actual,
-      predictedDensity: forecastData && forecastData[index] ? forecastData[index].predictedDensity : null,
-    }));
+    // If forecast data failed to load, or is not yet available, we use historical data only.
+    // We ensure historical data is always available for the chart to render something.
+    const baseData = mockHistoricalTrafficData.slice(0, 12); 
+    if (forecastData && forecastData.length > 0) {
+        return baseData.map((actual, index) => ({
+          ...actual,
+          predictedDensity: forecastData[index] ? forecastData[index].predictedDensity : null,
+        }));
+    }
+    return baseData.map(actual => ({ ...actual, predictedDensity: null }));
   }, [forecastData]);
 
   const filteredHistoricalData = useMemo(() => {
@@ -169,8 +180,8 @@ export default function AnalyticsPage() {
             }
         >
           {loadingForecast && <LoadingSkeleton/>}
-          {forecastError && <ErrorDisplay message={forecastError} />}
-          {!loadingForecast && !forecastError && forecastData && (
+          {forecastError && !loadingForecast && <ErrorDisplay message={forecastError} />}
+          {!loadingForecast && (
             <ResponsiveContainer width="100%" height="100%">
               <RechartsLineChart data={combinedChartData} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5}/>
@@ -226,7 +237,7 @@ export default function AnalyticsPage() {
        <ChartCard 
         title="Historical Traffic Density & Incidents" 
         description="Overview of traffic density and reported incidents over time."
-        icon={<BarChart3/>}
+        icon={<BarChartIcon/>}
         actionButton={
              <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-full sm:w-[200px] text-xs">

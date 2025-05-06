@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, LineChart as RechartsLineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line, Bar, PieChart, Pie, Cell } from 'recharts';
 import { congestionForecast, type CongestionForecastOutput } from '@/ai/flows/congestion-forecast';
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Clock, PieChartIcon, Activity, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Clock, PieChartIcon, Activity, BarChart3, Download, ServerCrash, AreaChart } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from '@/components/ui/skeleton';
 
 const mockHistoricalTrafficData = Array.from({ length: 24 }, (_, i) => ({
   time: `${String(i).padStart(2, '0')}:00`,
@@ -46,8 +47,6 @@ export default function AnalyticsPage() {
         const result = await congestionForecast({});
         
         const formattedForecast = result.forecastData.map(item => ({
-          // time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
-          // Ensure timestamp is valid before creating Date object
           time: item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : 'Invalid Time',
           predictedDensity: item.congestionLevel,
         }));
@@ -73,7 +72,6 @@ export default function AnalyticsPage() {
   }, []);
 
   const combinedChartData = useMemo(() => {
-    // Use the first 12 hours of mock historical data to align with 12-hour forecast
     const relevantHistoricalData = mockHistoricalTrafficData.slice(0, 12);
     return relevantHistoricalData.map((actual, index) => ({
       ...actual,
@@ -82,143 +80,156 @@ export default function AnalyticsPage() {
   }, [forecastData]);
 
   const filteredHistoricalData = useMemo(() => {
-    // Placeholder for actual time range filtering logic
-    if (timeRange === "last_hour") return mockHistoricalTrafficData.slice(-12); // Assuming 5-min intervals for last hour
-    return mockHistoricalTrafficData; // Default to last 24 hours
+    if (timeRange === "last_hour") return mockHistoricalTrafficData.slice(-12); 
+    return mockHistoricalTrafficData; 
   }, [timeRange]);
 
+  const KpiCard = ({ title, icon, value, progress, target, description, colorClass }: { title: string, icon: React.ReactNode, value: string | number, progress?: number, target?: string, description: string, colorClass: string }) => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden bg-card/80 backdrop-blur-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className={`text-lg flex items-center gap-2 ${colorClass}`}>
+          {icon}
+          {title}
+        </CardTitle>
+        <CardDescription className="text-xs">{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-2 pb-3">
+        <div className={`text-4xl font-bold mb-1 ${colorClass}`}>{value}</div>
+        {progress !== undefined && <Progress value={progress} aria-label={`${title} progress`} className={`h-2 [&>div]:bg-current rounded-full ${colorClass}`} />}
+      </CardContent>
+      {target && <CardFooter className="text-xs text-muted-foreground pt-1 pb-3">Target: {target}</CardFooter>}
+    </Card>
+  );
+
+  const ChartCard: React.FC<{ title: string; description: string; icon: React.ReactNode; children: React.ReactNode; className?: string; actionButton?: React.ReactNode }> = ({ title, description, icon, children, className, actionButton }) => (
+    <Card className={`shadow-xl rounded-xl overflow-hidden bg-card/80 backdrop-blur-sm ${className}`}>
+      <CardHeader className="border-b border-border/50">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <CardTitle className="text-xl flex items-center gap-2 text-primary">{icon}{title}</CardTitle>
+            <CardDescription className="text-xs">{description}</CardDescription>
+          </div>
+          {actionButton}
+        </div>
+      </CardHeader>
+      <CardContent className="h-[400px] p-4 pt-6">
+        {children}
+      </CardContent>
+    </Card>
+  );
+
+  const LoadingSkeleton = () => (
+    <div className="flex flex-col items-center justify-center h-full space-y-4 p-8 bg-background/50 rounded-lg">
+      <Skeleton className="h-12 w-12 rounded-full bg-muted" />
+      <Skeleton className="h-6 w-3/4 rounded-md bg-muted" />
+      <Skeleton className="h-4 w-1/2 rounded-md bg-muted" />
+    </div>
+  );
+
+  const ErrorDisplay = ({ message }: { message: string }) => (
+    <div className="flex flex-col items-center justify-center h-full space-y-3 p-8 bg-destructive/10 text-destructive border border-destructive/30 rounded-lg">
+      <ServerCrash className="h-12 w-12" />
+      <p className="text-lg font-semibold">Oops! Something went wrong.</p>
+      <p className="text-sm text-center">{message}</p>
+      <Button variant="outline" onClick={() => window.location.reload()} className="mt-2 border-destructive text-destructive hover:bg-destructive/20">
+        Try Again
+      </Button>
+    </div>
+  );
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <header className="mb-6">
-        <h1 className="text-4xl font-bold text-primary flex items-center gap-3">
-          <BarChart3 className="h-10 w-10" />
+      <header className="mb-8 text-center">
+        <h1 className="text-5xl font-extrabold text-primary flex items-center justify-center gap-4 mb-2">
+          <AreaChart className="h-12 w-12" />
           Analytics Portal
         </h1>
-        <p className="text-muted-foreground mt-1">Insights into traffic patterns, system performance, and incident trends.</p>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Dive deep into traffic patterns, system performance, and incident trends with our advanced analytics.
+        </p>
       </header>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden">
-          <CardHeader className="pb-2 bg-card/50">
-            <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="text-green-500"/>Flow Improvement</CardTitle>
-            <CardDescription>Efficiency increase</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="text-4xl font-bold text-green-600 mb-2">{kpiProgress.flow}%</div>
-            <Progress value={kpiProgress.flow} aria-label="Traffic flow improvement" className="h-2 bg-green-500/20 [&>div]:bg-green-500 rounded-full" />
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground pt-2 pb-4">Target: 40%</CardFooter>
-        </Card>
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden">
-          <CardHeader className="pb-2 bg-card/50">
-            <CardTitle className="text-lg flex items-center gap-2"><CheckCircle2 className="text-blue-500"/>Vehicle Pass Rate</CardTitle>
-            <CardDescription>Per signal cycle</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="text-4xl font-bold text-blue-600 mb-2">{kpiProgress.passRate}%</div>
-            <Progress value={kpiProgress.passRate} aria-label="Vehicle pass rate" className="h-2 bg-blue-500/20 [&>div]:bg-blue-500 rounded-full" />
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground pt-2 pb-4">Target: 60%</CardFooter>
-        </Card>
-         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden">
-          <CardHeader className="pb-2 bg-card/50">
-            <CardTitle className="text-lg flex items-center gap-2"><AlertCircle className="text-red-500"/>Active Incidents</CardTitle>
-            <CardDescription>Currently impacting traffic</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="text-4xl font-bold text-red-600">5</div>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground pt-2 pb-4">Across all monitored zones</CardFooter>
-        </Card>
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl overflow-hidden">
-          <CardHeader className="pb-2 bg-card/50">
-            <CardTitle className="text-lg flex items-center gap-2"><Clock className="text-orange-500"/>Avg. Delay Reduction</CardTitle>
-            <CardDescription>At key intersections</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="text-4xl font-bold text-orange-600">12s</div>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground pt-2 pb-4">Compared to previous month</CardFooter>
-        </Card>
+        <KpiCard title="Flow Improvement" icon={<TrendingUp />} value={`${kpiProgress.flow}%`} progress={kpiProgress.flow} target="40%" description="Efficiency increase YTD" colorClass="text-green-500" />
+        <KpiCard title="Vehicle Pass Rate" icon={<CheckCircle2 />} value={`${kpiProgress.passRate}%`} progress={kpiProgress.passRate} target="60%" description="Per signal cycle avg." colorClass="text-blue-500" />
+        <KpiCard title="Active Incidents" icon={<AlertCircle />} value="5" description="Currently impacting traffic" colorClass="text-red-500" />
+        <KpiCard title="Avg. Delay Reduction" icon={<Clock />} value="12s" description="Key intersections (MoM)" colorClass="text-orange-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 shadow-xl rounded-xl overflow-hidden">
-          <CardHeader className="bg-card/50">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <CardTitle className="text-xl flex items-center gap-2"><Activity className="text-primary"/>Congestion Forecast vs. Actual (12-Hour)</CardTitle>
-                <CardDescription>LSTM predicted congestion levels and actual recorded data.</CardDescription>
-              </div>
-              {/* <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/> Export Data</Button> */}
-            </div>
-          </CardHeader>
-          <CardContent className="h-[400px] pt-6">
-            {loadingForecast && <div className="flex items-center justify-center h-full"><p className="text-center text-muted-foreground pt-16">Loading forecast data...</p></div>}
-            {forecastError && <div className="flex items-center justify-center h-full"><p className="text-center text-destructive pt-16">{forecastError}</p></div>}
-            {!loadingForecast && !forecastError && forecastData && (
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={combinedChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-                  <YAxis label={{ value: 'Congestion / Density (%)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 12, dy: 70 }} stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: '0 4px 12px hsla(var(--shadow-color), 0.1)'}}
-                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: '600' }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Legend wrapperStyle={{fontSize: "12px", paddingTop: "10px"}} />
-                  <Line type="monotone" dataKey="predictedDensity" name="LSTM Prediction" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 4, strokeWidth:2, fill:'hsl(var(--background))', stroke: 'hsl(var(--primary))' }} activeDot={{ r: 6, strokeWidth:2, fill:'hsl(var(--primary))' }} />
-                  <Line type="monotone" dataKey="density" name="Actual Density" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 4, strokeWidth:2, fill:'hsl(var(--background))', stroke: 'hsl(var(--accent))' }} activeDot={{ r: 6, strokeWidth:2, fill: 'hsl(var(--accent))' }} />
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-xl rounded-xl overflow-hidden">
-          <CardHeader className="bg-card/50">
-            <CardTitle className="text-xl flex items-center gap-2"><PieChartIcon className="text-primary"/>Incident Type Distribution</CardTitle>
-            <CardDescription>Breakdown of incidents in the last 7 days.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[400px] pt-6 flex flex-col items-center justify-center">
-            <ResponsiveContainer width="100%" height="80%">
-              <PieChart>
-                <Pie
-                  data={incidentTypeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={110} // Increased radius
-                  innerRadius={50} // Added inner radius for donut chart
-                  dataKey="value"
-                  label={({ name, percent, fill }) => <text x={0} y={0} dy={8} textAnchor="middle" fill={fill} fontSize={12} fontWeight="bold">{`${(percent * 100).toFixed(0)}%`}</text>}
-                  fontSize={13} // Increased label font size
-                  stroke="hsl(var(--background))" // Added stroke for separation
-                  strokeWidth={2}
-                >
-                  {incidentTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: '0 4px 12px hsla(var(--shadow-color), 0.1)'}}/>
-              </PieChart>
+        <ChartCard 
+            title="Congestion Forecast vs. Actual (12-Hour)" 
+            description="LSTM predicted congestion levels alongside actual recorded data."
+            icon={<Activity/>}
+            className="lg:col-span-2"
+            actionButton={
+              <Button variant="outline" size="sm" className="text-xs">
+                <Download className="mr-1.5 h-3.5 w-3.5"/> Export Data
+              </Button>
+            }
+        >
+          {loadingForecast && <LoadingSkeleton/>}
+          {forecastError && <ErrorDisplay message={forecastError} />}
+          {!loadingForecast && !forecastError && forecastData && (
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsLineChart data={combinedChartData} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5}/>
+                <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={{stroke: 'hsl(var(--border))'}}/>
+                <YAxis label={{ value: 'Congestion / Density (%)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 11, dy: 70 }} stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={{stroke: 'hsl(var(--border))'}}/>
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)'}}
+                  labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: '600', fontSize: '0.8rem' }}
+                  itemStyle={{ color: 'hsl(var(--popover-foreground))', fontSize: '0.75rem' }}
+                />
+                <Legend wrapperStyle={{fontSize: "0.75rem", paddingTop: "15px"}}/>
+                <Line type="monotone" dataKey="predictedDensity" name="LSTM Prediction" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 4, strokeWidth:2, fill:'hsl(var(--background))', stroke: 'hsl(var(--primary))' }} activeDot={{ r: 6, strokeWidth:2, fill:'hsl(var(--primary))', stroke:'hsl(var(--background))' }} />
+                <Line type="monotone" dataKey="density" name="Actual Density" stroke="hsl(var(--accent))" strokeWidth={2.5} dot={{ r: 4, strokeWidth:2, fill:'hsl(var(--background))', stroke: 'hsl(var(--accent))' }} activeDot={{ r: 6, strokeWidth:2, fill: 'hsl(var(--accent))', stroke:'hsl(var(--background))' }} />
+              </RechartsLineChart>
             </ResponsiveContainer>
-             <Legend layout="horizontal" verticalAlign="bottom" align="center" iconSize={10} wrapperStyle={{fontSize: "12px", marginTop: "15px"}}/>
-          </CardContent>
-        </Card>
+          )}
+        </ChartCard>
+        
+        <ChartCard 
+            title="Incident Type Distribution" 
+            description="Breakdown of incidents in the last 7 days."
+            icon={<PieChartIcon/>}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={incidentTypeData}
+                cx="50%"
+                cy="45%" // Adjusted to make space for legend
+                labelLine={false}
+                outerRadius={100} 
+                innerRadius={45} 
+                dataKey="value"
+                label={({ name, percent, fill, x, y }) => 
+                    <text x={x} y={y} dy={4} textAnchor="middle" fill='hsl(var(--popover-foreground))' fontSize={11} fontWeight="500">
+                        {`${(percent * 100).toFixed(0)}%`}
+                    </text>
+                }
+                stroke="hsl(var(--background))"
+                strokeWidth={3}
+              >
+                {incidentTypeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full"/>
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)'}}/>
+              <Legend layout="horizontal" verticalAlign="bottom" align="center" iconSize={10} wrapperStyle={{fontSize: "0.75rem", marginTop: "10px"}}/>
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
-       <Card className="shadow-xl rounded-xl overflow-hidden">
-        <CardHeader className="bg-card/50">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div>
-                <CardTitle className="text-xl flex items-center gap-2"><Clock className="text-primary"/>Historical Traffic Density & Incidents</CardTitle>
-                <CardDescription>Overview of traffic density and reported incidents over time.</CardDescription>
-            </div>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+       <ChartCard 
+        title="Historical Traffic Density & Incidents" 
+        description="Overview of traffic density and reported incidents over time."
+        icon={<BarChart3/>}
+        actionButton={
+             <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-full sm:w-[200px] text-xs">
                 <SelectValue placeholder="Select time range" />
               </SelectTrigger>
               <SelectContent>
@@ -227,27 +238,25 @@ export default function AnalyticsPage() {
                 <SelectItem value="last_30_days">Last 30 Days (mock)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="h-[350px] pt-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={filteredHistoricalData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }} barGap={8}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-              <YAxis yAxisId="left" label={{ value: 'Traffic Density (%)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 12, dy: 50 }} stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-              <YAxis yAxisId="right" orientation="right" label={{ value: 'Incidents', angle: -90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 12, dy: -20 }} stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}/>
-              <Tooltip 
-                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: '0 4px 12px hsla(var(--shadow-color), 0.1)'}}
-                labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: '600' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
-              />
-              <Legend wrapperStyle={{fontSize: "12px", paddingTop: "10px"}}/>
-              <Bar yAxisId="left" dataKey="density" name="Traffic Density" fill="hsl(var(--chart-1))" radius={[6, 6, 0, 0]} barSize={25} />
-              <Bar yAxisId="right" dataKey="incidents" name="Incidents" fill="hsl(var(--chart-2))" radius={[6, 6, 0, 0]} barSize={25} />
-            </RechartsBarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        }
+       >
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsBarChart data={filteredHistoricalData} margin={{ top: 5, right: 20, left: -10, bottom: 20 }} barGap={10} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5}/>
+            <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={{stroke: 'hsl(var(--border))'}}/>
+            <YAxis yAxisId="left" label={{ value: 'Traffic Density (%)', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 11, dy: 50 }} stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={{stroke: 'hsl(var(--border))'}}/>
+            <YAxis yAxisId="right" orientation="right" label={{ value: 'Incidents', angle: -90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 11, dy: -20 }} stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={{stroke: 'hsl(var(--border))'}}/>
+            <Tooltip 
+              contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)'}}
+              labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: '600', fontSize: '0.8rem' }}
+              itemStyle={{ color: 'hsl(var(--popover-foreground))', fontSize: '0.75rem' }}
+            />
+            <Legend wrapperStyle={{fontSize: "0.75rem", paddingTop: "15px"}}/>
+            <Bar yAxisId="left" dataKey="density" name="Traffic Density" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+            <Bar yAxisId="right" dataKey="incidents" name="Incidents" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+          </RechartsBarChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </div>
   );
 }

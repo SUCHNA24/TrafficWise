@@ -1,12 +1,38 @@
 
+import { config } from 'dotenv';
+config();
+
 import {genkit, type Plugin} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import { dotprompt } from '@genkit-ai/dotprompt';
 
-const genkitPlugins: Plugin<any>[] = [
-  // dotprompt is generally useful for defining prompts and doesn't require API keys itself.
-  dotprompt(),
-];
+// Attempt to import dotprompt and add it to plugins only if successful
+let dotpromptPlugin = null;
+try {
+  const { dotprompt } = await import('@genkit-ai/dotprompt');
+  dotpromptPlugin = dotprompt();
+  console.log('@genkit-ai/dotprompt loaded successfully.');
+} catch (e) {
+  console.warn(
+    `
+#######################################################################################
+WARNING: @genkit-ai/dotprompt module not found. 
+This plugin is optional but recommended for defining prompts.
+If you intend to use .prompt files, please install it:
+  npm install @genkit-ai/dotprompt
+  # or
+  yarn add @genkit-ai/dotprompt
+  # or
+  pnpm add @genkit-ai/dotprompt
+#######################################################################################
+    `
+  );
+}
+
+const genkitPlugins: Plugin<any>[] = [];
+
+if (dotpromptPlugin) {
+  genkitPlugins.push(dotpromptPlugin);
+}
 
 let defaultModel: string | undefined = undefined;
 
@@ -44,3 +70,4 @@ export const ai = genkit({
   // Note: logLevel 'debug' is configured differently in Genkit 1.x, typically via genkit-tools if needed.
   // enableTracingAndMetrics: true, // Uncomment if you need tracing
 });
+

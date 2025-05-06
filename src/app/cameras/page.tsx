@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  // DialogTrigger, // No longer needed here
 } from "@/components/ui/dialog";
 
 
@@ -174,11 +174,11 @@ export default function CameraFeedsPage() {
                   {cam.status !== "Online" && (
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                       <p>Last online: {cam.id % 2 === 0 ? '2 hours ago' : '1 day ago'}</p>
-                      <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)}>View Details</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleViewDetails(cam)} disabled={cam.status !== 'Online'}>View Details</Button>
                     </div>
                   )}
                 </CardContent>
-                 {/* DialogContent is now directly tied to Dialog's open state, no separate trigger needed for it here */}
+                 
                   <DialogContent className="sm:max-w-[600px]">
                     {selectedCamera && ( // Ensure selectedCamera is not null before rendering
                     <>
@@ -225,3 +225,4 @@ export default function CameraFeedsPage() {
     </div>
   );
 }
+

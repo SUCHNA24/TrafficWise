@@ -72,7 +72,6 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
     
-    // Client-side state for sidebar open/close, initialized after mount
     const [clientOpen, setClientOpen] = React.useState(defaultOpen);
     const [hasMounted, setHasMounted] = React.useState(false);
 
@@ -90,7 +89,7 @@ const SidebarProvider = React.forwardRef<
     }, []);
 
 
-    const open = openProp ?? (hasMounted ? clientOpen : defaultOpen); // Use defaultOpen for SSR, clientOpen after mount
+    const open = openProp ?? (hasMounted ? clientOpen : defaultOpen); 
 
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
@@ -197,7 +196,7 @@ const Sidebar = React.forwardRef<
       return (
         <aside 
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground z-50", // Added z-50
             className
           )}
           ref={ref}
@@ -214,14 +213,14 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden border-none" 
+            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden border-none z-50" // Added z-50
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
             side={side}
-            // Removed title prop as SheetContent now handles accessible title internally
+            title="Mobile Sidebar" // Explicitly set title for SheetContent
             {...props} 
           >
             <div className="flex h-full w-full flex-col">{children}</div>
@@ -233,7 +232,7 @@ const Sidebar = React.forwardRef<
     return (
       <aside 
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
+        className={cn("group peer hidden md:block text-sidebar-foreground z-50", className)} // Added z-50
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -252,7 +251,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-300 fixed inset-y-0 z-50 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-in-out md:flex", // Ensure high z-index for desktop sidebar too
+            "duration-300 fixed inset-y-0 z-50 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-in-out md:flex", 
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -844,4 +843,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-

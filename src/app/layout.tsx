@@ -1,3 +1,4 @@
+
 'use client'; 
 
 import type {Metadata} from 'next';
@@ -26,9 +27,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { usePathname } from 'next/navigation'; 
 import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+
+// Default title for SSR to avoid mismatch, will be updated client-side
+const DEFAULT_TITLE = 'TrafficWise';
 
 export default function RootLayout({
   children,
@@ -37,6 +40,17 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const { toast } = useToast();
+  const [pageTitle, setPageTitle] = useState(DEFAULT_TITLE);
+  const [isMounted, setIsMounted] = useState(false);
+
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+      variant: "default", 
+    });
+  };
 
   const pageTitlesMap: Record<string, string> = {
     '/': 'Home',
@@ -50,36 +64,28 @@ export default function RootLayout({
     '/admin': 'System Administration',
   };
   
-  // Determine pageTitle synchronously based on pathname
-  const pageTitle = pageTitlesMap[pathname] || 'TrafficWise';
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-      variant: "default", 
-    });
-  };
-  
   useEffect(() => {
-    // Update document.title on client side after hydration
+    setIsMounted(true);
+    const title = pageTitlesMap[pathname] || DEFAULT_TITLE;
+    setPageTitle(title);
     if (typeof window !== 'undefined') {
-      document.title = `TrafficWise - ${pageTitle}`;
+      document.title = `TrafficWise - ${title}`;
     }
-  }, [pageTitle]);
+  }, [pathname]);
 
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="description" content="Intelligent traffic management system powered by AI." />
+        <title>TrafficWise</title> {/* Static title for SSR */}
       </head>
-      <body className={cn(inter.variable, "font-sans antialiased bg-background text-foreground")}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <SidebarProvider defaultOpen>
           <Sidebar 
             side="left" 
             collapsible="icon" 
-            className="border-r border-sidebar-border shadow-md"
+            className="border-r border-sidebar-border shadow-md z-50" // Consistent high z-index
             variant="sidebar" 
           >
             <SidebarHeader className="p-4 border-b border-sidebar-border">
@@ -158,7 +164,7 @@ export default function RootLayout({
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="md:hidden text-muted-foreground hover:text-foreground" />
                 <h2 className="text-xl font-semibold text-foreground">
-                  {pageTitle}
+                  {isMounted ? pageTitle : DEFAULT_TITLE}
                 </h2>
               </div>
               <ThemeToggle />
